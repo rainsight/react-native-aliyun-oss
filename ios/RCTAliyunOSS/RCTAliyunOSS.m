@@ -136,6 +136,7 @@ RCT_REMAP_METHOD(uploadObjectAsync, bucketName:(NSString *)BucketName
     //NSString * docDir = [self getDocumentDirectory];
     //put.uploadingFileURL = [NSURL fileURLWithPath:[docDir stringByAppendingPathComponent:@"file1m"]];
     put.uploadingFileURL = [NSURL fileURLWithPath:SourceFile];
+    put.contentMd5 = [OSSUtil base64Md5ForFilePath:SourceFile];
     NSLog(@"uploadingFileURL: %@", put.uploadingFileURL);
     // optional fields
     put.uploadProgress = ^(int64_t bytesSent, int64_t totalByteSent, int64_t totalBytesExpectedToSend) {
