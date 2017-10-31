@@ -48,6 +48,10 @@ const AliyunOSS = {
       conf.updateDate);
   },
 
+  cancelUploadObject(){
+    return NativeAliyunOSS.cancelUploadObject();
+  },
+
   downloadObjectAsync(conf) {
     return NativeAliyunOSS.downloadObjectAsync(
       conf.bucketName,

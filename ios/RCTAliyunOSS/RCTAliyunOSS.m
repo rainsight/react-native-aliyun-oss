@@ -14,7 +14,8 @@
 @implementation RCTAliyunOSS{
     
     OSSClient *client;
- 
+    OSSPutObjectRequest *put;
+    
 }
 
 - (NSArray<NSString *> *)supportedEvents {
@@ -78,7 +79,7 @@ RCT_EXPORT_METHOD(initWithSigner:(NSString *)AccessKey
         //return [NSString stringWithFormat:@"OSS %@:%@", @"<your access key>", signature];
         return [NSString stringWithFormat:@"OSS %@:%@", AccessKey, Signature];
     }];
-
+    
     
     OSSClientConfiguration * conf = [OSSClientConfiguration new];
     conf.maxRetryCount = 1;
@@ -98,8 +99,8 @@ RCT_REMAP_METHOD(downloadObjectAsync, bucketName:(NSString *)bucketName objectKe
     request.downloadProgress = ^(int64_t bytesWritten, int64_t totalBytesWritten, int64_t totalBytesExpectedToWrite) {
         NSLog(@"%lld, %lld, %lld", bytesWritten, totalBytesWritten, totalBytesExpectedToWrite);
         [self sendEventWithName: @"downloadProgress" body:@{@"everySentSize":[NSString stringWithFormat:@"%lld",bytesWritten],
-                                                          @"currentSize": [NSString stringWithFormat:@"%lld",totalBytesWritten],
-                                                          @"totalSize": [NSString stringWithFormat:@"%lld",totalBytesExpectedToWrite]}];
+                                                            @"currentSize": [NSString stringWithFormat:@"%lld",totalBytesWritten],
+                                                            @"totalSize": [NSString stringWithFormat:@"%lld",totalBytesExpectedToWrite]}];
     };
     NSString *docDir = [self getDocumentDirectory];
     NSLog(objectKey);
@@ -122,13 +123,17 @@ RCT_REMAP_METHOD(downloadObjectAsync, bucketName:(NSString *)bucketName objectKe
 
 //异步上传
 RCT_REMAP_METHOD(uploadObjectAsync, bucketName:(NSString *)BucketName
-                  SourceFile:(NSString *)SourceFile
-                  OssFile:(NSString *)OssFile
-                  UpdateDate:(NSString *)UpdateDate
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject) {
+                 SourceFile:(NSString *)SourceFile
+                 OssFile:(NSString *)OssFile
+                 UpdateDate:(NSString *)UpdateDate
+                 resolver:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject) {
+    if (put != nil) {
+        reject(@"E_BEING_UPLOADING", @"正在上传中", nil);
+        return;
+    }
     
-    OSSPutObjectRequest * put = [OSSPutObjectRequest new];
+    put = [OSSPutObjectRequest new];
     
     // required fields
     put.bucketName = BucketName;
@@ -144,13 +149,12 @@ RCT_REMAP_METHOD(uploadObjectAsync, bucketName:(NSString *)BucketName
         [self sendEventWithName: @"uploadProgress" body:@{@"everySentSize":[NSString stringWithFormat:@"%lld",bytesSent],
                                                           @"currentSize": [NSString stringWithFormat:@"%lld",totalByteSent],
                                                           @"totalSize": [NSString stringWithFormat:@"%lld",totalBytesExpectedToSend]}];
-
+        
     };
     //put.contentType = @"";
-    //put.contentMd5 = @"";
     //put.contentEncoding = @"";
     //put.contentDisposition = @"";
-     put.objectMeta = [NSMutableDictionary dictionaryWithObjectsAndKeys: UpdateDate, @"Date", nil];
+    put.objectMeta = [NSMutableDictionary dictionaryWithObjectsAndKeys: UpdateDate, @"Date", nil];
     
     OSSTask * putTask = [client putObject:put];
     
@@ -159,14 +163,28 @@ RCT_REMAP_METHOD(uploadObjectAsync, bucketName:(NSString *)BucketName
         if (!task.error) {
             NSLog(@"upload object success!");
             resolve(@YES);
+        } else if ([task.error.domain  isEqual: @"com.aliyun.oss.clientError"] && task.error.code == 5){
+            NSLog(@"上传已取消!");
+            reject(@"E_UPLOAD_CANCELLED", @"上传已取消", nil);
         } else {
             NSLog(@"upload object failed, error: %@" , task.error);
-            reject(@"-1", @"not respond this method", nil);
+            reject(@"E_UPLOAD_FAILED", @"上传失败", nil);
         }
+        
+        put = nil;
+        
         return nil;
     }];
 }
 
-
+RCT_REMAP_METHOD(cancelUploadObject,
+                 resolver:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject) {
+    [put cancel];
+    put = nil;
+    resolve(@YES);
+    
+    return;
+}
 
 @end
