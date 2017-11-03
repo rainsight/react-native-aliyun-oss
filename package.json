@@ -1,23 +1,23 @@
 {
   "author": {
-    "name": "SpadeGod"
+    "name": "rainsight"
   },
   "dependencies": {},
   "description": "upload file to aliyun oss",
   "devDependencies": {},
-  "homepage": "https://github.com/SpadeGod/react-native-aliyun-oss#readme",
+  "homepage": "https://github.com/rainsight/react-native-aliyun-oss-sdk#readme",
   "keywords": [
     "aliyun",
     "oss"
   ],
   "license": "MIT",
   "main": "index.js",
-  "name": "react-native-aliyun-oss-cp",
+  "name": "react-native-aliyun-oss-sdk",
   "optionalDependencies": {},
   "repository" :  
   { 
     "type" : "git", 
-    "url" : "https://github.com/SpadeGod/react-native-aliyun-oss"  
+    "url" : "https://github.com/rainsight/react-native-aliyun-oss-sdk"  
   },
   "version": "1.0.6"
 }
